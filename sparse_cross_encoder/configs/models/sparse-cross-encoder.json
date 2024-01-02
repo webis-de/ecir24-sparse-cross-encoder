@@ -1,0 +1,9 @@
+{
+  "attention_window_size": 4,
+  "cls_query_attention": true,
+  "cls_doc_attention": true,
+  "query_cls_attention": false,
+  "query_doc_attention": false,
+  "doc_query_attention": true,
+  "doc_cls_attention": true
+}
