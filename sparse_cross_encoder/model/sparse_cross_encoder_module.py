@@ -172,10 +172,10 @@ class SparseCrossEncoderModule(pl.LightningModule):
     def on_save_checkpoint(self, checkpoint: Dict[str, Any]) -> None:
         if self.trainer is not None and self.trainer.log_dir is not None:
             step = self.trainer.global_step
-            self.listformer.config.save_step = step
+            self.sparse_cross_encoder.config.save_step = step
             log_dir = Path(self.trainer.log_dir)
             save_path = log_dir / "huggingface_checkpoint"
-            self.listformer.save_pretrained(save_path)
+            self.sparse_cross_encoder.save_pretrained(save_path)
             try:
                 self.trainer.datamodule.tokenizer.save_pretrained(save_path)
             except:
