@@ -1,0 +1,3 @@
+[submodule "submodules/pytorchltr"]
+	path = submodules/pytorchltr
+	url = https://github.com/rjagerman/pytorchltr
