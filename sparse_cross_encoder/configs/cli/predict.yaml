@@ -1,0 +1,19 @@
+# pytorch_lightning==2.0.2
+seed_everything: true
+trainer:
+  precision: 32-true
+  logger: false
+  callbacks:
+    - class_path: sparse_cross_encoder.model.callbacks.PredictionWriter
+      init_args:
+        output_path: run.txt
+model:
+  model_name_or_path: null
+data:
+  ir_dataset_path: null
+  truncate: true
+  max_length: 512
+  batch_size: 2
+  depth: 100
+return_predictions: false
+ckpt_path: null
