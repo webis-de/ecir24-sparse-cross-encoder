@@ -159,7 +159,10 @@ def register_rerank_data_to_ir_datasets(re_rank_file_path: Path, ir_dataset_id: 
         re_rank_df = pd.read_json(
             re_rank_file_path, lines=lines, dtype={"docno": str, "qid": str}
         )
-        re_rank_df = re_rank_df.drop(["original_document", "original_query"], axis=1)
+        try:
+            re_rank_df = re_rank_df.drop(["original_document", "original_query"], axis=1)
+        except:
+            pass
         re_rank_df = re_rank_df.astype({"docno": str, "qid": str})
     elif re_rank_file_path.suffix == ".parquet":
         re_rank_df = pd.read_parquet(
