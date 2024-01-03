@@ -1,5 +1,5 @@
 {
-    "image": "fschlatt/sparse-cross-encoder:0.0.1-dev",
+    "image": "webis/sparse-cross-encoder:0.0.1-dev",
     "customizations": {
         "vscode": {
             "extensions": [
