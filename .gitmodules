@@ -1,3 +1,6 @@
 [submodule "submodules/pytorchltr"]
 	path = submodules/pytorchltr
 	url = https://github.com/rjagerman/pytorchltr
+[submodule "submodules/longformer"]
+	path = submodules/longformer
+	url = https://github.com/allenai/longformer
