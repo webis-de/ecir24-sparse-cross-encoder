@@ -226,7 +226,7 @@ class SparseCrossEncoderDataModule(pl.LightningDataModule):
     def __init__(
         self,
         model_name_or_path: str,
-        ir_dataset_paths: Iterable[str | Path],
+        ir_dataset_path: Path,
         truncate: bool = True,
         max_query_length: int = 32,
         max_length: int = 512,
@@ -236,7 +236,7 @@ class SparseCrossEncoderDataModule(pl.LightningDataModule):
     ):
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(model_name_or_path)
 
-        self.ir_dataset_paths = ir_dataset_paths
+        self.ir_dataset_path = ir_dataset_path
 
         self.truncate = truncate
         self.max_query_length = max_query_length
@@ -246,31 +246,22 @@ class SparseCrossEncoderDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
 
         self.train_dataset = None
-        self.predict_datasets = []
+        self.predict_dataset = None
         super().__init__()
 
     def setup_train(self, ir_dataset: ir_datasets.Dataset) -> None:
         self.train_dataset = DocPairDataset(ir_dataset)
 
-    def setup_predict(self, ir_datasets: Iterable[ir_datasets.Dataset]) -> None:
-        self.predict_datasets = []
-        for ir_dataset in ir_datasets:
-            self.predict_datasets.append(
-                RunDataset(ir_dataset=ir_dataset, depth=self.depth)
-            )
+    def setup_predict(self, ir_dataset: ir_datasets.Dataset) -> None:
+        self.predict_dataset = RunDataset(ir_dataset=ir_dataset, depth=self.depth)
 
     def setup(self, stage: Optional[str] = None):
-        datasets = [
-            load_ir_dataset(ir_dataset_path)
-            for ir_dataset_path in self.ir_dataset_paths
-        ]
+        dataset = load_ir_dataset(self.ir_dataset_path)
         if stage in ("fit", None):
-            if len(datasets) > 1:
-                raise ValueError("only a single dataset is supported for training")
-            self.setup_train(datasets[0])
+            self.setup_train(dataset)
 
         if stage == "predict":
-            self.setup_predict(datasets)
+            self.setup_predict(dataset)
 
         CACHE_LOADER.clear()
 
@@ -284,15 +275,13 @@ class SparseCrossEncoderDataModule(pl.LightningDataModule):
         )
 
     def predict_dataloader(self):
-        return [
-            torch.utils.data.DataLoader(
-                predict_data,
-                batch_size=self.batch_size,
-                collate_fn=self.collate_and_tokenize,
-                num_workers=self.num_workers,
-            )
-            for predict_data in self.predict_datasets
-        ]
+        assert self.predict_dataset is not None
+        return torch.utils.data.DataLoader(
+            self.predict_dataset,
+            batch_size=self.batch_size,
+            collate_fn=self.collate_and_tokenize,
+            num_workers=self.num_workers,
+        )
 
     def collate_and_tokenize(self, batch: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
         query_input_ids = self.tokenizer(

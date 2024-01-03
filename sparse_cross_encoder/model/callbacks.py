@@ -17,29 +17,9 @@ RUN_HEADER = ["query", "q0", "docid", "rank", "score", "system"]
 
 
 class PredictionWriter(BasePredictionWriter):
-    def __init__(self, overwrite: bool = False) -> None:
+    def __init__(self, output_path: Path) -> None:
         super().__init__("batch")
-        self.overwrite = overwrite
-
-    def get_run_path(
-        self, trainer: Trainer, pl_module: LightningModule, dataset_idx: int
-    ) -> Path:
-        assert hasattr(trainer, "datamodule")
-        assert hasattr(trainer, "ckpt_path")
-        ckpt_path = Path(trainer.ckpt_path)
-        datamodule = trainer.datamodule
-        ir_dataset_path = datamodule.ir_dataset_paths[dataset_idx]
-        ir_dataset = load_ir_dataset(ir_dataset_path)
-        original_ir_dataset_id = re.sub(
-            r"__.+__", "", ir_dataset.dataset_id().split("/")[-1]
-        )
-        original_ir_dataset = ir_datasets.load(
-            DASHED_DATASET_MAP[original_ir_dataset_id]
-        )
-        dataset_id = original_ir_dataset.dataset_id().replace("/", "-")
-        filename = Path(ir_dataset_path).parent.name + "_" + dataset_id + ".run"
-        run_file_path = ckpt_path.parent.parent / "runs" / filename
-        return run_file_path
+        self.output_path = output_path
 
     def write_on_batch_end(
         self,
@@ -51,7 +31,6 @@ class PredictionWriter(BasePredictionWriter):
         batch_idx: int,
         dataloader_idx: int,
     ) -> None:
-        run_file_path = self.get_run_path(trainer, pl_module, dataloader_idx)
         doc_ids = batch["doc_ids"]
         query_ids = batch["query_id"]
         scores = [float(logit.item()) for logits in prediction for logit in logits]
@@ -73,9 +52,8 @@ class PredictionWriter(BasePredictionWriter):
         run_df["q0"] = 0
         run_df["system"] = "sparse_cross_encoder"
         run_df = run_df[RUN_HEADER]
-        run_file_path.parent.mkdir(exist_ok=True)
         if batch_idx == 0:
             mode = "w"
         else:
             mode = "a"
-        run_df.to_csv(run_file_path, header=False, index=False, sep="\t", mode=mode)
+        run_df.to_csv(self.output_path, header=False, index=False, sep="\t", mode=mode)
