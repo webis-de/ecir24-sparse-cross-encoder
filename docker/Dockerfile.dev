@@ -22,3 +22,6 @@ RUN pip install \
     aquarel \
     trectools \
     && pip cache purge
+
+RUN huggingface-cli download webis/sparse-cross-encoder-4-4096 \
+    && huggingface-cli download webis/sparse-cross-encoder-4-512
