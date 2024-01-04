@@ -2,8 +2,6 @@ from typing import Literal, Optional
 
 import torch
 
-import pytorchltr.loss.pairwise_lambda as ptltr
-
 PAD_VALUE = -10000
 EPS = 1e-6
 
@@ -281,68 +279,6 @@ class ListMLE(LossFunc):
         loss = torch.log(cumsum + EPS) - diff
         loss = loss.masked_fill(mask, 0)
         return self.aggregate(loss)
-
-
-class LambdaLoss(LossFunc):
-    def __init__(
-        self,
-        loss: ptltr.LambdaLoss,
-        reduction: Optional[Literal["mean", "sum"]] = "mean",
-    ):
-        super().__init__(reduction)
-        self.loss = loss
-
-        def empty_reduction(x):
-            return x
-
-        self.loss._loss_reduction = empty_reduction
-
-    def compute(
-        self,
-        logits: torch.Tensor,
-        labels: torch.Tensor,
-    ) -> torch.Tensor:
-        mask = (labels == PAD_VALUE) | (logits == PAD_VALUE)
-        n = (~mask).sum(dim=-1)
-        loss = self.loss.forward(logits, labels, n)
-        mask = mask[..., None] | mask[:, None]
-        return self.aggregate(loss, mask)
-
-
-class LambdaNDCG1(LambdaLoss):
-    def __init__(
-        self,
-        temperature: float = 1.0,
-        reduction: Optional[Literal["mean", "sum"]] = "mean",
-    ):
-        super().__init__(ptltr.LambdaNDCGLoss1(temperature), reduction)
-
-
-class LambdaNDCG2(LambdaLoss):
-    def __init__(
-        self,
-        temperature: float = 1.0,
-        reduction: Optional[Literal["mean", "sum"]] = "mean",
-    ):
-        super().__init__(ptltr.LambdaNDCGLoss2(temperature), reduction)
-
-
-class LambdaARP1(LambdaLoss):
-    def __init__(
-        self,
-        temperature: float = 1.0,
-        reduction: Optional[Literal["mean", "sum"]] = "mean",
-    ):
-        super().__init__(ptltr.LambdaARPLoss1(temperature), reduction)
-
-
-class LambdaARP2(LambdaLoss):
-    def __init__(
-        self,
-        temperature: float = 1.0,
-        reduction: Optional[Literal["mean", "sum"]] = "mean",
-    ):
-        super().__init__(ptltr.LambdaARPLoss2(temperature), reduction)
 
 
 class NeuralLoss(LossFunc):
