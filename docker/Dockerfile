@@ -8,6 +8,6 @@ RUN wget https://raw.githubusercontent.com/tira-io/ir-experiment-platform/main/t
     && chmod +x /workspace/run-pyterrier-notebook.py \
     && cp /workspace/notebooks/${JUPYTER_NOTEBOOK} /workspace/notebooks/notebook.ipynb \
     && pip3 install runnb \
-    && jupyter trust /workspace/*.ipynb
+    && jupyter trust /workspace/notebooks/*.ipynb
 
 ENTRYPOINT [ "/workspace/run-pyterrier-notebook.py", "--input", "$inputDataset", "--output", "$outputDir", "--notebook", "/workspace/notebooks/notebook.ipynb" ]
