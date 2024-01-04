@@ -53,5 +53,5 @@ jobs:
           tira-run --export-submission-from-jupyter-notebook ${{ github.workspace }}/notebooks/${{ inputs.notebook }} >> $GITHUB_ENV
       - name: Build, test, and upload image
         run: |
-          docker build -t ${{ env.IMAGE_TAG }} --build-arg JUPYTER_NOTEBOOK=${{inputs.notebook}} -f docker/Dockerfile ${{ github.workspace }}/notebooks
+          docker build -t ${{ env.IMAGE_TAG }} --build-arg JUPYTER_NOTEBOOK=${{inputs.notebook}} -f docker/Dockerfile ${{ github.workspace }}
           tira-run --input-dataset workshop-on-open-web-search/re-ranking-20231027-training --image ${{ env.IMAGE_TAG }} --push true
