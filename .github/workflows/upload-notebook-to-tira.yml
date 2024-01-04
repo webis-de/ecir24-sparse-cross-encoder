@@ -55,3 +55,4 @@ jobs:
         run: |
           docker build -t ${{ env.IMAGE_TAG }} --build-arg JUPYTER_NOTEBOOK=${{inputs.notebook}} -f docker/Dockerfile ${{ github.workspace }}
           tira-run --input-dataset workshop-on-open-web-search/re-ranking-20231027-training --image ${{ env.IMAGE_TAG }} --push true
+          head -5 tira-output/run.txt
