@@ -435,7 +435,7 @@ class TirexDataset(torch.utils.data.IterableDataset):
                         yield {
                             "query": query,
                             "docs": docs,
-                            "query_id": query_id,
+                            "query_id": prev_query_id,
                             "doc_ids": doc_ids,
                         }
                     docs = []
@@ -447,3 +447,10 @@ class TirexDataset(torch.utils.data.IterableDataset):
                 query = data["query"]
                 docs.append(data["text"])
                 doc_ids.append(data["docno"])
+        if docs:
+            yield {
+                "query": query,
+                "docs": docs,
+                "query_id": prev_query_id,
+                "doc_ids": doc_ids,
+            }
