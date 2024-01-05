@@ -5,7 +5,10 @@ from lightning import LightningModule
 from lightning.pytorch.cli import LightningCLI  # noqa: F401
 from torch.optim import Optimizer
 
-from sparse_cross_encoder.data.datamodule import SparseCrossEncoderDataModule
+from sparse_cross_encoder.data.datamodule import (
+    SparseCrossEncoderDataModule,
+    TirexDataModule,
+)  # noqa: F401
 from sparse_cross_encoder.model.sparse_cross_encoder import (
     SparseCrossEncoderConfig,
 )  # noqa: F401
@@ -43,7 +46,9 @@ class SparseCrossEncoderLightningCLI(LightningCLI):
 
     def add_arguments_to_parser(self, parser):
         parser.add_lr_scheduler_args(tuple(LR_SCHEDULERS))
-        parser.link_arguments("model.model_name_or_path", "data.model_name_or_path")
+        parser.link_arguments(
+            "model.model_name_or_path", "data.init_args.model_name_or_path"
+        )
         parser.link_arguments(
             "trainer.max_steps", "lr_scheduler.init_args.num_training_steps"
         )
@@ -73,7 +78,6 @@ def main():
     """
     SparseCrossEncoderLightningCLI(
         SparseCrossEncoderModule,
-        SparseCrossEncoderDataModule,
         save_config_kwargs={"config_filename": "pl_config.yaml", "overwrite": True},
     )
 
