@@ -497,6 +497,7 @@ class SparseCrossEncoderSelfAttention(nn.Module):
         attention_mask = None
         if attention_masks:
             attention_mask = torch.cat(attention_masks, dim=4)
+            attention_mask = attention_mask.to(inp.query_layer)
         context_layer = torch.nn.functional.scaled_dot_product_attention(
             inp.query_layer,
             key_layer,
