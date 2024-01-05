@@ -10,9 +10,9 @@ trainer:
 model:
   model_name_or_path: null
 data:
-  class_path: sparse_cross_encoder.data.data_modules.SparseCrossEncoderDataModule
+  class_path: sparse_cross_encoder.data.datamodule.TirexDataModule
   init_args:
-    ir_dataset_path: null
+    jsonl_path: null
     truncate: true
     max_length: 512
     batch_size: 2

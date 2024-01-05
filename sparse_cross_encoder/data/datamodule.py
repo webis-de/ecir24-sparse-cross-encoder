@@ -1,16 +1,18 @@
+import gzip
+import json
 import re
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, Literal, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, Iterator, Literal, Optional, Union
 
 import ir_datasets
 import lightning.pytorch as pl
+from lightning.pytorch.utilities.types import EVAL_DATALOADERS
 import pandas as pd
 import torch
 import torch.utils.data
 import transformers
 
-from .ir_dataset_utils import get_base
 from .ir_dataset_utils import load as load_ir_dataset
 
 
@@ -318,3 +320,130 @@ class SparseCrossEncoderDataModule(pl.LightningDataModule):
                 if key in ("doc_ids", "query_id"):
                     collated_batch[key].append(value)
         return dict(collated_batch)
+
+
+class TirexDataModule(pl.LightningDataModule):
+    def __init__(
+        self,
+        model_name_or_path: str,
+        jsonl_path: Path,
+        truncate: bool = True,
+        max_query_length: int = 32,
+        max_length: int = 512,
+        batch_size: int = 1,
+        depth: int = 100,
+        num_docs_per_sample: int = -1,
+    ):
+        super().__init__()
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained(model_name_or_path)
+        self.jsonl_path = jsonl_path
+        self.truncate = truncate
+        self.max_query_length = max_query_length
+        self.max_length = max_length
+        self.batch_size = batch_size
+        self.depth = depth
+        if num_docs_per_sample == -1:
+            num_docs_per_sample = depth
+        self.num_docs_per_sample = num_docs_per_sample
+
+        self.dataset: TirexDataset
+
+    def setup(self, stage: Optional[str] = None):
+        if stage != "predict":
+            raise ValueError(
+                f"TirexDataModule only supports prediction, got stage: {stage}"
+            )
+        self.dataset = TirexDataset(
+            self.jsonl_path, self.depth, self.num_docs_per_sample
+        )
+
+    def predict_dataloader(self) -> EVAL_DATALOADERS:
+        return torch.utils.data.DataLoader(
+            self.dataset,
+            batch_size=self.batch_size,
+            collate_fn=self.collate_and_tokenize,
+            num_workers=0,
+        )
+
+    def collate_and_tokenize(self, batch: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
+        query_input_ids = self.tokenizer(
+            [batch_dict["query"] for batch_dict in batch],
+            truncation=self.truncate,
+            max_length=self.max_query_length if self.truncate else None,
+        ).input_ids
+        # remove [CLS] token
+        query_input_ids = [torch.tensor(input_ids[1:]) for input_ids in query_input_ids]
+        max_query_length = max(tensor.shape[0] for tensor in query_input_ids)
+        max_doc_length = self.max_length - max_query_length
+        doc_input_ids = []
+        for batch_dict in batch:
+            batch_doc_input_ids = self.tokenizer(
+                batch_dict["docs"],
+                truncation=self.truncate,
+                max_length=max_doc_length if self.truncate else None,
+            ).input_ids
+            # remove [CLS] token
+            batch_doc_input_ids = [
+                torch.tensor(input_ids[1:]) for input_ids in batch_doc_input_ids
+            ]
+            doc_input_ids.append(batch_doc_input_ids)
+        collated_batch = defaultdict(list)
+        collated_batch["query_input_ids"] = query_input_ids
+        collated_batch["doc_input_ids"] = doc_input_ids
+        for batch_dict in batch:
+            for key, value in batch_dict.items():
+                if "input_ids" in key:
+                    continue
+                if "labels" in key:
+                    value = torch.tensor(value).float()
+                    collated_batch[key].append(value)
+                if key in ("doc_ids", "query_id"):
+                    collated_batch[key].append(value)
+        return dict(collated_batch)
+
+
+class TirexDataset(torch.utils.data.IterableDataset):
+    def __init__(self, jsonl_path: Path, depth: int, num_docs_per_sample: int) -> None:
+        super().__init__()
+        self.jsonl_path = jsonl_path
+        self.depth = depth
+        self.num_docs_per_sample = num_docs_per_sample
+
+    def __iter__(self) -> Iterator[Dict[str, Any]]:
+        if ".gz" in self.jsonl_path.suffixes:
+            open_fn = gzip.open
+        else:
+            open_fn = open
+        with open_fn(self.jsonl_path, "rt") as f:
+            depth = 0
+            query_id = None
+            prev_query_id = None
+            query = None
+            docs = []
+            doc_ids = []
+            for line in f:
+                data = json.loads(line)
+                query_id = data["qid"]
+                if (
+                    (prev_query_id != query_id and prev_query_id is not None)
+                    or depth >= self.depth
+                    or len(docs) >= self.num_docs_per_sample
+                ):
+                    if prev_query_id != query_id:
+                        depth = 0
+                    if docs:
+                        yield {
+                            "query": query,
+                            "docs": docs,
+                            "query_id": query_id,
+                            "doc_ids": doc_ids,
+                        }
+                    docs = []
+                    doc_ids = []
+                prev_query_id = query_id
+                depth += 1
+                if depth > self.depth:
+                    continue
+                query = data["query"]
+                docs.append(data["text"])
+                doc_ids.append(data["docno"])
