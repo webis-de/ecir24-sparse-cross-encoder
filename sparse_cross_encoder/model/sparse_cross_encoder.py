@@ -899,13 +899,10 @@ class SparseCrossEncoderPreTrainedModel(PreTrainedModel):
 class SparseCrossEncoderModelForSequenceClassification(
     SparseCrossEncoderPreTrainedModel
 ):
-    def __init__(
-        self, config: SparseCrossEncoderConfig, model_type: Literal["bert", "electra"]
-    ):
+    def __init__(self, config: SparseCrossEncoderConfig):
         super().__init__(config)
         self.config = config
-        self.model_type = model_type
-        self.add_module(model_type, SparseCrossEncoderModel(config))
+        self.add_module(self.config.model_type, SparseCrossEncoderModel(config))
 
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = nn.Linear(config.hidden_size, 1)
@@ -919,9 +916,9 @@ class SparseCrossEncoderModelForSequenceClassification(
         doc_input_ids: Sequence[Sequence[torch.Tensor]],
         output_hidden_states: bool = False,
     ) -> SparseCrossEncoderModelOutput:
-        output: SparseCrossEncoderModelOutput = getattr(self, self.model_type).forward(
-            query_input_ids, doc_input_ids, output_hidden_states
-        )
+        output: SparseCrossEncoderModelOutput = getattr(
+            self, self.config.model_type
+        ).forward(query_input_ids, doc_input_ids, output_hidden_states)
 
         if output.pooler_output is None:
             cls_output = output.last_hidden_state.cls
@@ -1039,6 +1036,16 @@ class SparseCrossEncoderModel(SparseCrossEncoderPreTrainedModel):
         )
         max_num_docs = max(len(batch_input_ids) for batch_input_ids in doc_input_ids)
 
+        query_input_ids = [
+            torch.cat(
+                [
+                    input_ids,
+                    torch.tensor([self.config.sep_token_id], device=self.device),
+                ]
+            )
+            for input_ids in query_input_ids
+        ]
+
         query = torch.nn.utils.rnn.pad_sequence(
             query_input_ids,
             batch_first=True,
@@ -1056,6 +1063,15 @@ class SparseCrossEncoderModel(SparseCrossEncoderPreTrainedModel):
         padded_cls_input_ids = []
         padded_doc_input_ids = []
         for batch_input_ids in doc_input_ids:
+            batch_input_ids = [
+                torch.cat(
+                    [
+                        input_ids,
+                        torch.tensor([self.config.sep_token_id], device=self.device),
+                    ]
+                )
+                for input_ids in batch_input_ids
+            ]
             padded_input_ids = []
             cls_tokens = [self.config.cls_token_id]
             batch_cls_input_ids = [cls_tokens] * len(batch_input_ids)

@@ -50,18 +50,20 @@ class SparseCrossEncoderModule(pl.LightningModule):
         cls_token_id = (
             tokenizer.cls_token_id if tokenizer.cls_token_id else tokenizer.bos_token_id
         )
+        sep_token_id = tokenizer.sep_token_id
         assert pad_token_id is not None
         assert cls_token_id is not None
+        assert sep_token_id is not None
 
         self.config = model_config
         self.config.pad_token_id = pad_token_id
         self.config.cls_token_id = cls_token_id
+        self.config.sep_token_id = sep_token_id
 
         self.sparse_cross_encoder = (
             SparseCrossEncoderModelForSequenceClassification.from_pretrained(
                 model_name_or_path,
                 config=model_config,
-                model_type=base_config.model_type,
                 ignore_mismatched_sizes=True,
             )
         )
