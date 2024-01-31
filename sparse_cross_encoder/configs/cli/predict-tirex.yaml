@@ -4,13 +4,13 @@ trainer:
   precision: 32-true
   logger: false
   callbacks:
-    - class_path: sparse_cross_encoder.model.callbacks.PredictionWriter
+    - class_path: PredictionWriter
       init_args:
         output_path: run.txt
 model:
   model_name_or_path: null
 data:
-  class_path: sparse_cross_encoder.data.datamodule.TirexDataModule
+  class_path: TirexDataModule
   init_args:
     jsonl_path: null
     truncate: true
