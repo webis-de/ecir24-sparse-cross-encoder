@@ -258,7 +258,7 @@ class SparseCrossEncoderDataModule(pl.LightningDataModule):
         self.predict_dataset = RunDataset(ir_dataset=ir_dataset, depth=self.depth)
 
     def setup(self, stage: Optional[str] = None):
-        dataset = load_ir_dataset(self.ir_dataset_path)
+        dataset = load_ir_dataset(str(self.ir_dataset_path))
         if stage in ("fit", None):
             self.setup_train(dataset)
 
