@@ -2,13 +2,17 @@ from typing import Any, Optional, Union
 
 import torch
 from lightning import LightningModule
-from lightning.pytorch.cli import LightningCLI  # noqa: F401
+from lightning.pytorch import LightningModule, Trainer
+from lightning.pytorch.cli import LightningCLI, SaveConfigCallback  # noqa: F401
 from torch.optim import Optimizer
+from typing_extensions import override
 
-from sparse_cross_encoder.data.datamodule import (
+from sparse_cross_encoder.data.datamodule import (  # noqa: F401
     SparseCrossEncoderDataModule,
     TirexDataModule,
-)  # noqa: F401
+)
+from sparse_cross_encoder.model import loss_utils  # noqa: F401
+from sparse_cross_encoder.model.loggers import CustomWandbLogger  # noqa: F401
 from sparse_cross_encoder.model.sparse_cross_encoder import (
     SparseCrossEncoderConfig,
 )  # noqa: F401
@@ -20,12 +24,17 @@ from sparse_cross_encoder.model.warmup_schedulers import (
     ConstantSchedulerWithWarmup,
     LinearSchedulerWithWarmup,
 )
-from sparse_cross_encoder.model import loss_utils  # noqa: F401
-from sparse_cross_encoder.model.loggers import CustomWandbLogger  # noqa: F401
-
 
 if torch.cuda.is_available():
     torch.set_float32_matmul_precision("medium")
+
+
+class SparseCrossEncoderSaveConfigCallback(SaveConfigCallback):
+    @override
+    def setup(self, trainer: Trainer, pl_module: LightningModule, stage: str) -> None:
+        if stage == "predict":
+            return
+        return super().setup(trainer, pl_module, stage)
 
 
 class SparseCrossEncoderLightningCLI(LightningCLI):
@@ -78,6 +87,7 @@ def main():
     """
     SparseCrossEncoderLightningCLI(
         SparseCrossEncoderModule,
+        save_config_callback=SparseCrossEncoderSaveConfigCallback,
         save_config_kwargs={"config_filename": "pl_config.yaml", "overwrite": True},
     )
 
