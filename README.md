@@ -8,7 +8,7 @@ This repository contains the code for the paper [Investigating the Effects of Sp
   <img align="center" src="static/patterns.png" width="900px" />
 </p>
 <p align="center">
-<b>Figure 1:</b> The efficient Sparse Cross-Encoder attention pattern compared with previous cross-encoder attention patterns. Black tokens are CLS tokens, blue tokens are query tokens, and yellow tokens are document tokens.
+<b>Figure 1:</b> The efficient Sparse Cross-Encoder attention pattern compared with previous cross-encoder attention patterns. Black tokens are CLS tokens, blue tokens are query tokens, red tokens are special sentence separator tokens, and yellow tokens are document tokens.
 </p>
 
 ## Models
