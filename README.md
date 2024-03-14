@@ -39,7 +39,7 @@ The main entrypoint for running the sparse cross-encoder is the `main.py` script
 
 ### Inference
 
-To run inference, call the `main.py` script with the `predict` option. The script additionally needs a config yaml file which passes parameters such as batch size etc. See the [predict.yaml](./sparse_cross_encoder/configs/cli/predict.yaml) for an example. The config file should specify the path to a run file (TREC or JSON format), the model you would like to use (can be a model from the huggingface hub or a local model), and the output path where the run re-ranked run file should be saved. These options can also be passed as command line arguments.
+To run inference, call the `main.py` script with the `predict` option. The script additionally needs a config yaml file which passes parameters such as batch size etc. See the [predict.yaml](./sparse_cross_encoder/configs/cli/predict.yaml) for an example. The config file should specify the path to a run file (TREC or JSON format), the model you would like to use (can be a model from the huggingface hub or a local model), and the output path where the re-ranked run file should be saved. These options can also be passed as command line arguments.
 
 For example, the following command runs inference on TREC DL 2019 with first-stage retrieval by BM25.
 
