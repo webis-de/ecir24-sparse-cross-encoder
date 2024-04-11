@@ -108,11 +108,15 @@ python main.py fit --config sparse_cross_encoder/configs/cli/train.yaml
 @InProceedings{schlatt:2024a,
   author =                   {Ferdinand Schlatt and Maik Fr{\"o}be and Matthias Hagen},
   booktitle =                {Advances in Information Retrieval. 46th European Conference on IR Research (ECIR 2024)},
+  doi =                      {10.1007/978-3-031-56027-9_11},
+  editor =                   {Nazli Goharian and Nicola Tonellotto and Yulan He and Aldo Lipani and Graham McDonald and Craig Macdonald and Iadh Ounis},
   month =                    mar,
+  pages =                    {173--190},
   publisher =                {Springer},
   series =                   {Lecture Notes in Computer Science},
   site =                     {Glasgow, Scotland},
   title =                    {{Investigating the Effects of Sparse Attention on Cross-Encoders}},
+  volume =                   14608,
   year =                     2024
 }
 ```
